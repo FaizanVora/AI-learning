@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 
 from app.config import get_settings
+from app.routes.chat import router as chat_router
 
 settings = get_settings()
 
@@ -11,6 +12,8 @@ app = FastAPI(
     version="0.1.0",
     description="Minimal FastAPI service for learning OpenRouter LLM patterns.",
 )
+
+app.include_router(chat_router)
 
 
 @app.get("/health")
