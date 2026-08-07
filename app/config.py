@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     llm_provider: str = "openrouter"
     openrouter_api_key: str = ""
-    openrouter_model: str = "openrouter/owl-alpha"
+    openrouter_model: str = "openai/gpt-4o-mini"
     app_name: str = "ai-learning"
     app_env: str = "development"
 
