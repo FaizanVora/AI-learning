@@ -1,0 +1,24 @@
+[project]
+name = "ai-learning"
+version = "0.1.0"
+description = "FastAPI learning service wrapping OpenRouter (streaming, tools, structured output)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic-settings>=2.6.0",
+]
+
+[project.scripts]
+ai-learning = "app.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.uv]
+dev-dependencies = []
