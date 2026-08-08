@@ -15,9 +15,10 @@ Health check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
 Interactive docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 ```bash
-curl -s http://127.0.0.1:8000/chat \
+# -N disables curl buffering so you see SSE events as they arrive
+curl -N -s http://127.0.0.1:8000/chat \
   -H 'Content-Type: application/json' \
   -d '{"message":"What is the weather in London?"}'
 ```
 
-If the model uses the `get_weather` tool, the response includes `"tools_used": ["get_weather"]`.
+SSE event types: `status`, `tool`, `delta` (text fragments), `done` (full reply + `tools_used`).

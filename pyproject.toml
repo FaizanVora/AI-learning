@@ -9,6 +9,7 @@ dependencies = [
     "uvicorn[standard]>=0.32.0",
     "pydantic-settings>=2.6.0",
     "openai>=2.53.0",
+    "sse-starlette>=3.4.8",
 ]
 
 [project.scripts]
