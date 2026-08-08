@@ -14,3 +14,7 @@ class ChatResponse(BaseModel):
 
     reply: str
     model: str
+    tools_used: list[str] = Field(
+        default_factory=list,
+        description="Tool names the model requested during this turn (empty if none).",
+    )

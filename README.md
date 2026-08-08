@@ -17,5 +17,7 @@ Interactive docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 ```bash
 curl -s http://127.0.0.1:8000/chat \
   -H 'Content-Type: application/json' \
-  -d '{"message":"Say hello in one short sentence."}'
+  -d '{"message":"What is the weather in London?"}'
 ```
+
+If the model uses the `get_weather` tool, the response includes `"tools_used": ["get_weather"]`.

@@ -11,10 +11,10 @@ router = APIRouter(tags=["chat"])
 
 @router.post("/chat", response_model=ChatResponse)
 def chat(body: ChatRequest) -> ChatResponse:
-    """Send one user message to OpenRouter; return the full reply (no streaming yet)."""
+    """Send one user message to OpenRouter; may use tools, then return the full reply."""
     settings = get_settings()
     try:
-        reply, model = chat_completion(body.message, settings)
+        reply, model, tools_used = chat_completion(body.message, settings)
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     except Exception as exc:
@@ -24,4 +24,4 @@ def chat(body: ChatRequest) -> ChatResponse:
             detail=f"Upstream LLM error: {exc}",
         ) from exc
 
-    return ChatResponse(reply=reply, model=model)
+    return ChatResponse(reply=reply, model=model, tools_used=tools_used)

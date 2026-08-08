@@ -1,8 +1,12 @@
 """OpenRouter client (OpenAI-compatible SDK)."""
 
+from __future__ import annotations
+
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessage
 
 from app.config import Settings, get_settings
+from app.tools import TOOLS, execute_tool
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
@@ -24,17 +28,75 @@ def get_openrouter_client(settings: Settings | None = None) -> OpenAI:
     )
 
 
-def chat_completion(message: str, settings: Settings | None = None) -> tuple[str, str]:
-    """Single-turn, non-streaming chat completion.
+def _assistant_message_to_dict(message: ChatCompletionMessage) -> dict:
+    """Serialize the assistant turn (including tool_calls) for the next request."""
+    payload: dict = {
+        "role": "assistant",
+        "content": message.content,
+    }
+    if message.tool_calls:
+        payload["tool_calls"] = [
+            {
+                "id": tc.id,
+                "type": "function",
+                "function": {
+                    "name": tc.function.name,
+                    "arguments": tc.function.arguments,
+                },
+            }
+            for tc in message.tool_calls
+        ]
+    return payload
 
-    Returns (assistant_text, model_id).
+
+def chat_completion(
+    message: str, settings: Settings | None = None
+) -> tuple[str, str, list[str]]:
+    """Chat with optional tool use (non-streaming).
+
+    Flow:
+      1) Send user message + tool definitions.
+      2) If the model returns tool_calls, execute them locally.
+      3) Append assistant + tool result messages, call the model again for the final answer.
+
+    Returns (assistant_text, model_id, tools_used).
     """
     settings = settings or get_settings()
     client = get_openrouter_client(settings)
+    messages: list[dict] = [{"role": "user", "content": message}]
+    tools_used: list[str] = []
+
     completion = client.chat.completions.create(
         model=settings.openrouter_model,
-        messages=[{"role": "user", "content": message}],
+        messages=messages,
+        tools=TOOLS,
+        tool_choice="auto",
     )
-    content = completion.choices[0].message.content or ""
+    assistant = completion.choices[0].message
     model = completion.model or settings.openrouter_model
-    return content, model
+
+    if not assistant.tool_calls:
+        return assistant.content or "", model, tools_used
+
+    # Turn 2: model asked for tools — we run them, then ask again.
+    messages.append(_assistant_message_to_dict(assistant))
+    for tool_call in assistant.tool_calls:
+        name = tool_call.function.name
+        tools_used.append(name)
+        result = execute_tool(name, tool_call.function.arguments)
+        messages.append(
+            {
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": result,
+            }
+        )
+
+    follow_up = client.chat.completions.create(
+        model=settings.openrouter_model,
+        messages=messages,
+        tools=TOOLS,
+    )
+    final = follow_up.choices[0].message
+    model = follow_up.model or model
+    return final.content or "", model, tools_used
